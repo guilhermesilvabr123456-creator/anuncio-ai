@@ -31,7 +31,11 @@ export default function Home() {
 
       const dados = await resposta.json();
 
-      setResultado(dados.anuncio || "Não foi possível gerar o anúncio.");
+setResultado(
+  (dados.anuncio || "Não foi possível gerar o anúncio.")
+    .replace(/###/g, "")
+    .replace(/\*\*/g, "")
+);
     } catch (erro) {
       setResultado("Erro ao gerar anúncio. Tente novamente.");
     }
