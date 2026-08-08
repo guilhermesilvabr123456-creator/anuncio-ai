@@ -1,9 +1,3 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(request) {
   try {
     const { produto, publico } = await request.json();
@@ -15,29 +9,69 @@ export async function POST(request) {
       );
     }
 
-    const resposta = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Você é um especialista em marketing e copywriting. Crie anúncios persuasivos, claros e profissionais em português do Brasil.",
-        },
-        {
-          role: "user",
-          content: `Crie um anúncio para o seguinte produto ou serviço: ${produto}. Público-alvo: ${publico}. Inclua título, texto do anúncio e uma chamada para ação.`,
-        },
-      ],
-    });
+    const prompt = `
+Você é um especialista em marketing e copywriting.
 
-    const anuncio = resposta.choices[0]?.message?.content;
+Crie um anúncio profissional em português do Brasil.
+
+Produto ou serviço:
+${produto}
+
+Público-alvo:
+${publico}
+
+O anúncio deve conter:
+- Um título chamativo
+- Um texto persuasivo
+- Benefícios do produto
+- Uma chamada para ação
+`;
+
+    const resposta = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      console.error(dados);
+
+      return Response.json(
+        {
+          error: dados?.error?.message || "Erro ao gerar anúncio com IA.",
+        },
+        { status: resposta.status }
+      );
+    }
+
+    const anuncio =
+      dados?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Não foi possível gerar o anúncio.";
 
     return Response.json({ anuncio });
   } catch (error) {
     console.error(error);
 
     return Response.json(
-      { error: "Erro ao gerar o anúncio." },
+      { error: "Erro interno ao gerar anúncio." },
       { status: 500 }
     );
   }
