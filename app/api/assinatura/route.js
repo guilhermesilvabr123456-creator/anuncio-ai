@@ -18,7 +18,7 @@ export async function POST(request) {
   );
     }
 const emailPagador = accessToken.startsWith("TEST-")
-  ? "test_payer@testuser.com"
+  ? ? "test_payer@example.com"
   : email;
 
     const resposta = await fetch(
