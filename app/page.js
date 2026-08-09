@@ -148,7 +148,49 @@ setResultado(
             onClick={copiarAnuncio}
           >
             📋 Copiar anúncio
-          </button>  </div>
+          </button> {resultado.includes("atingiu o limite") && (
+  <div style={{ marginTop: "20px" }}>
+    <h3>Plano Pro — R$ 19,90/mês</h3>
+    <p>Tenha até 100 anúncios por mês.</p>
+
+    <button
+      type="button"
+      style={{ ...styles.botao, marginTop: "12px" }}
+      onClick={async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          alert("Entre novamente na sua conta.");
+          window.location.href = "/login";
+          return;
+        }
+
+        const resposta = await fetch("/api/assinatura", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: user.email,
+            userId: user.id,
+          }),
+        });
+
+        const dados = await resposta.json();
+
+        if (dados.url) {
+          window.location.href = dados.url;
+        } else {
+          alert(dados.error || "Não foi possível iniciar a assinatura.");
+        }
+      }}
+    >
+      💳 Assinar com Mercado Pago
+    </button>
+  </div>
+)} </div>
           )}
         </div>
 
