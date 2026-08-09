@@ -49,7 +49,7 @@ export async function POST(request) {
 
     const { data: perfil, error: perfilError } = await supabase
       .from("profiles")
-      .select("plan, monthly_limit, usage_count")
+      .select("plan, monthly_limit, usage_count, usage_reset_at")
       .eq("id", user.id)
       .single();
 
@@ -59,7 +59,31 @@ export async function POST(request) {
         { status: 404 }
       );
     }
+    const agora = new Date();
+    const ultimoReset = new Date(perfil.usage_reset_at);
 
+    const mudouMes =
+      agora.getUTCFullYear() !== ultimoReset.getUTCFullYear() ||
+      agora.getUTCMonth() !== ultimoReset.getUTCMonth();
+
+    if (mudouMes) {
+      const { error: resetError } = await supabase
+        .from("profiles")
+        .update({
+          usage_count: 0,
+          usage_reset_at: agora.toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (resetError) {
+        return Response.json(
+          { error: "Não foi possível renovar seu limite mensal." },
+          { status: 500 }
+        );
+      }
+
+      perfil.usage_count = 0;
+    }
     if (perfil.usage_count >= perfil.monthly_limit) {
       return Response.json(
         {
