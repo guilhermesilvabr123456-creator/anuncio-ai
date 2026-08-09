@@ -41,7 +41,15 @@ async function gerarAnuncio() {
       alert("Preencha o produto e o público-alvo.");
       return;
     }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
+    if (!session) {
+      alert("Sua sessão expirou. Entre novamente.");
+      window.location.href = "/login";
+      return;
+    }
     setCarregando(true);
     setResultado("");
 
@@ -49,7 +57,7 @@ async function gerarAnuncio() {
       const resposta = await fetch("/api/gerar", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json",        Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           produto,
