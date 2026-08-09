@@ -10,7 +10,25 @@ export default function Home() {
   const [produto, setProduto] = useState("");
   const [publico, setPublico] = useState("");
   const [resultado, setResultado] = useState("");
-  const [carregando, setCarregando] = useState(false);
+  const [carregando, setCarregando] = useState(false);const [nomeUsuario, setNomeUsuario] = useState("");
+
+useEffect(() => {
+  async function carregarUsuario() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      setNomeUsuario(
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "Usuário"
+      );
+    }
+  }
+
+  carregarUsuario();
+}, []);
 
   async function gerarAnuncio() {
     if (!produto || !publico) {
@@ -54,7 +72,18 @@ setResultado(
   }
   return (
     <main style={styles.main}>
-      <div style={styles.container}>
+      <div style={styles.container}>{nomeUsuario && (
+  <div
+    style={{
+      color: "#ffffff",
+      textAlign: "right",
+      marginBottom: "16px",
+      fontWeight: "700",
+    }}
+  >
+    Olá, {nomeUsuario} 👋
+  </div>
+)}
         <div style={styles.badge}>✨ Inteligência Artificial</div>
 
         <h1 style={styles.titulo}>
