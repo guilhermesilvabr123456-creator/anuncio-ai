@@ -30,7 +30,13 @@ useEffect(() => {
   carregarUsuario();
 }, []);
 
-  async function gerarAnuncio() {
+  async function sair() {
+  await supabase.auth.signOut();
+  window.location.href = "/login";
+}
+
+async function gerarAnuncio() {
+
     if (!produto || !publico) {
       alert("Preencha o produto e o público-alvo.");
       return;
