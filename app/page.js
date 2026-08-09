@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -10,7 +10,7 @@ export default function Home() {
   const [produto, setProduto] = useState("");
   const [publico, setPublico] = useState("");
   const [resultado, setResultado] = useState("");
-  const [carregando, setCarregando] = useState(false);const [nomeUsuario, setNomeUsuario] = useState("");
+  const [carregando, setCarregando] = useState(false);
 const [nomeUsuario, setNomeUsuario] = useState("");
 useEffect(() => {
   async function carregarUsuario() {
