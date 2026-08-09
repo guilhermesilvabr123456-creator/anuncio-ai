@@ -26,9 +26,10 @@ const emailPagador = accessToken.startsWith("TEST-")
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+  Authorization: `Bearer ${accessToken}`,
+  "Content-Type": "application/json",
+  "X-scope": "stage",
+},
         body: JSON.stringify({
           reason: "AnuncioAI Pro - 100 anúncios por mês",
           external_reference: userId || email,
