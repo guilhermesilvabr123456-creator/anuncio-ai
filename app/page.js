@@ -68,7 +68,7 @@ async function gerarAnuncio() {
       const dados = await resposta.json();
 
 setResultado(
-  (dados.anuncio || "Não foi possível gerar o anúncio.")
+  ((resposta.ok ? dados.anuncio : dados.error) || "Não foi possível gerar o anúncio.")
     .replace(/###/g, "")
     .replace(/\*\*/g, "")
 );
