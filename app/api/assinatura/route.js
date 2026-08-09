@@ -38,7 +38,7 @@ export async function POST(request) {
           },
           back_url: "https://anuncio-ai.vercel.app/?assinatura=sucesso",
           status: "pending",
-        }),
+       notification_url: "https://anuncio-ai.vercel.app/api/webhook", }),
       }
     );
 
