@@ -12,11 +12,14 @@ export async function POST(request) {
     const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
     if (!accessToken) {
-      return Response.json(
-        { error: "Mercado Pago não configurado." },
-        { status: 500 }
-      );
+  return Response.json(
+    { error: "Mercado Pago não configurado." },
+    { status: 500 }
+  );
     }
+const emailPagador = accessToken.startsWith("TEST-")
+  ? "test_payer@testuser.com"
+  : email;
 
     const resposta = await fetch(
       "https://api.mercadopago.com/preapproval",
@@ -29,7 +32,7 @@ export async function POST(request) {
         body: JSON.stringify({
           reason: "AnuncioAI Pro - 100 anúncios por mês",
           external_reference: userId || email,
-          payer_email: email,
+          payer_email: emailPagador,
           auto_recurring: {
             frequency: 1,
             frequency_type: "months",
