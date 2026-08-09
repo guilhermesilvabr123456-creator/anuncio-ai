@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 export async function GET() {
   return Response.json({
     status: "ok",
@@ -7,6 +9,66 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const authorization = request.headers.get("authorization");
+
+    if (!authorization?.startsWith("Bearer ")) {
+      return Response.json(
+        { error: "Faça login para gerar anúncios." },
+        { status: 401 }
+      );
+    }
+
+    const token = authorization.replace("Bearer ", "").trim();
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+        auth: {
+          persistSession: false,
+        },
+      }
+    );
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return Response.json(
+        { error: "Sua sessão expirou. Entre novamente." },
+        { status: 401 }
+      );
+    }
+
+    const { data: perfil, error: perfilError } = await supabase
+      .from("profiles")
+      .select("plan, monthly_limit, usage_count")
+      .eq("id", user.id)
+      .single();
+
+    if (perfilError || !perfil) {
+      return Response.json(
+        { error: "Perfil do usuário não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    if (perfil.usage_count >= perfil.monthly_limit) {
+      return Response.json(
+        {
+          error: `Você atingiu o limite de ${perfil.monthly_limit} anúncios do seu plano.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const { produto, publico } = await request.json();
 
     if (!produto || !publico) {
@@ -59,7 +121,8 @@ O anúncio deve conter:
 
       return Response.json(
         {
-          error: dados?.error?.message || "Erro ao gerar anúncio.",
+          error:
+            dados?.error?.message || "Erro ao gerar anúncio.",
         },
         { status: resposta.status }
       );
@@ -75,7 +138,30 @@ O anúncio deve conter:
       );
     }
 
-    return Response.json({ anuncio });
+    const novoUso = perfil.usage_count + 1;
+
+    const { error: atualizacaoError } = await supabase
+      .from("profiles")
+      .update({ usage_count: novoUso })
+      .eq("id", user.id);
+
+    if (atualizacaoError) {
+      console.error(
+        "Erro ao atualizar uso:",
+        atualizacaoError
+      );
+
+      return Response.json(
+        { error: "Não foi possível atualizar o seu limite." },
+        { status: 500 }
+      );
+    }
+
+    return Response.json({
+      anuncio,
+      usage_count: novoUso,
+      monthly_limit: perfil.monthly_limit,
+    });
   } catch (error) {
     console.error("Erro interno:", error);
 
