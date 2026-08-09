@@ -11,7 +11,7 @@ export default function Home() {
   const [publico, setPublico] = useState("");
   const [resultado, setResultado] = useState("");
   const [carregando, setCarregando] = useState(false);const [nomeUsuario, setNomeUsuario] = useState("");
-
+const [nomeUsuario, setNomeUsuario] = useState("");
 useEffect(() => {
   async function carregarUsuario() {
     const {
