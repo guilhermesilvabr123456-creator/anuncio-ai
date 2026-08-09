@@ -42,7 +42,12 @@ setResultado(
 
     setCarregando(false);
   }
+  async function copiarAnuncio() {
+    if (!resultado) return;
 
+    await navigator.clipboard.writeText(resultado);
+    alert("Anúncio copiado!");
+  }
   return (
     <main style={styles.main}>
       <div style={styles.container}>
@@ -90,7 +95,13 @@ setResultado(
             <div style={styles.resultado}>
               <h3>Seu anúncio:</h3>
               <p style={{ whiteSpace: "pre-wrap" }}>{resultado}</p>
-            </div>
+                    <button
+            type="button"
+            style={{ ...styles.botao, marginTop: "16px" }}
+            onClick={copiarAnuncio}
+          >
+            📋 Copiar anúncio
+          </button>  </div>
           )}
         </div>
 
