@@ -2,7 +2,7 @@ export async function POST(request) {
   try {
     const { email, userId } = await request.json();
 
-    if (!email) {
+    if (!email || !userId) {
       return Response.json(
         { error: "E-mail do usuário não encontrado." },
         { status: 400 }
@@ -30,7 +30,7 @@ export async function POST(request) {
         body: JSON.stringify({
           reason: "AnuncioAI Pro - 100 anúncios por mês",
 
-          external_reference: userId || email,
+          external_reference: userId,
 
           payer_email: emailPagador,
 
