@@ -23,7 +23,19 @@ export async function POST(request) {
     }
 
     const url = new URL(request.url);
+const tipoEvento =
+  notificacao?.type ||
+  url.searchParams.get("type");
 
+if (
+  tipoEvento &&
+  tipoEvento !== "subscription_preapproval"
+) {
+  return Response.json({
+    received: true,
+    ignored: tipoEvento,
+  });
+}
     const assinaturaId =
       notificacao?.data?.id ||
       notificacao?.id ||
