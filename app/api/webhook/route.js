@@ -119,8 +119,9 @@ if (
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({
-        monthly_limit: 100,
-      })
+  plan: "pro",
+  monthly_limit: 100,
+})
       .eq("id", userId)
       .select("id");
 
