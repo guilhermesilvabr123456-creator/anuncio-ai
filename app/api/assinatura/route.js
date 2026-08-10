@@ -17,7 +17,7 @@ export async function POST(request) {
     { status: 500 }
   );
     }
-const emailPagador = email;
+const emailPagador = process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || email;
 
     const resposta = await fetch(
       "https://api.mercadopago.com/preapproval",
