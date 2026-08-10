@@ -12,58 +12,91 @@ export async function POST(request) {
     const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
     if (!accessToken) {
-  return Response.json(
-    { error: "Mercado Pago não configurado." },
-    { status: 500 }
-  );
+      return Response.json(
+        { error: "Mercado Pago não configurado." },
+        { status: 500 }
+      );
     }
-const emailPagador = process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || email;
+
+    // Enquanto estivermos testando, usamos sempre um e-mail de teste.
+    const emailPagador =
+      process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || "test@testuser.com";
+
+    console.log("EMAIL ENVIADO AO MP:", emailPagador);
 
     const resposta = await fetch(
       "https://api.mercadopago.com/preapproval",
       {
         method: "POST",
         headers: {
-  
-    
-  Authorization: `Bearer ${accessToken}`,
-  "Content-Type": "application/json",
-},
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           reason: "AnuncioAI Pro - 100 anúncios por mês",
+
           external_reference: userId || email,
+
           payer_email: emailPagador,
+
           auto_recurring: {
             frequency: 1,
             frequency_type: "months",
             transaction_amount: 19.9,
             currency_id: "BRL",
           },
-          back_url: "https://anuncio-ai.vercel.app/?assinatura=sucesso",
+
+          back_url:
+            "https://anuncio-ai.vercel.app/?assinatura=sucesso",
+
           status: "pending",
-       notification_url: "https://anuncio-ai.vercel.app/api/webhook", }),
+
+          notification_url:
+            "https://anuncio-ai.vercel.app/api/webhook",
+        }),
       }
     );
 
     const dados = await resposta.json();
-console.log("ASSINATURA CRIADA:", JSON.stringify({ id: dados.id, status: dados.status, payer_email: dados.payer_email, init_point: dados.init_point }));
+
+    console.log(
+      "RESPOSTA MERCADO PAGO:",
+      JSON.stringify(dados)
+    );
+
     if (!resposta.ok || !dados.init_point) {
-  console.error("ERRO MERCADO PAGO:", JSON.stringify(dados));
+      console.error(
+        "ERRO MERCADO PAGO:",
+        JSON.stringify(dados)
+      );
 
-  return Response.json(
-    {
-      error: dados.message || "Não foi possível criar a assinatura.",
-      details: dados
-    },
-    { status: resposta.status || 500 }
-  );
-}
+      return Response.json(
+        {
+          error:
+            dados.message ||
+            "Não foi possível criar a assinatura.",
+          details: dados,
+        },
+        {
+          status: resposta.status || 500,
+        }
+      );
+    }
 
-    return Response.json({ url: dados.init_point });
+    return Response.json({
+      url: dados.init_point,
+      subscriptionId: dados.id,
+    });
   } catch (error) {
+    console.error("ERRO /api/assinatura:", error);
+
     return Response.json(
-      { error: "Erro ao iniciar a assinatura." },
-      { status: 500 }
+      {
+        error: "Erro ao iniciar a assinatura.",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
