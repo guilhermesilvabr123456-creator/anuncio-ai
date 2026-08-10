@@ -40,7 +40,7 @@ const emailPagador = email;
             currency_id: "BRL",
           },
           back_url: "https://anuncio-ai.vercel.app/?assinatura=sucesso",
-          status: "authorized",
+          status: "pending",
        notification_url: "https://anuncio-ai.vercel.app/api/webhook", }),
       }
     );
