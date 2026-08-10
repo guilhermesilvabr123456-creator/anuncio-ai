@@ -50,11 +50,16 @@ const emailPagador = accessToken.startsWith("TEST-")
     const dados = await resposta.json();
 
     if (!resposta.ok || !dados.init_point) {
-      return Response.json(
-        { error: dados.message || "Não foi possível criar a assinatura." },
-        { status: resposta.status || 500 }
-      );
-    }
+  console.error("ERRO MERCADO PAGO:", JSON.stringify(dados));
+
+  return Response.json(
+    {
+      error: dados.message || "Não foi possível criar a assinatura.",
+      details: dados
+    },
+    { status: resposta.status || 500 }
+  );
+}
 
     return Response.json({ url: dados.init_point });
   } catch (error) {
