@@ -26,9 +26,10 @@ const emailPagador = accessToken.startsWith("TEST-")
       {
         method: "POST",
         headers: {
+  
+    
   Authorization: `Bearer ${accessToken}`,
   "Content-Type": "application/json",
-  "X-scope": "stage",
 },
         body: JSON.stringify({
           reason: "AnuncioAI Pro - 100 anúncios por mês",
@@ -41,7 +42,7 @@ const emailPagador = accessToken.startsWith("TEST-")
             currency_id: "BRL",
           },
           back_url: "https://anuncio-ai.vercel.app/?assinatura=sucesso",
-          status: "pending",
+          status: "authorized",
        notification_url: "https://anuncio-ai.vercel.app/api/webhook", }),
       }
     );
