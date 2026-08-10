@@ -46,7 +46,7 @@ const emailPagador = email;
     );
 
     const dados = await resposta.json();
-
+console.log("ASSINATURA CRIADA:", JSON.stringify({ id: dados.id, status: dados.status, payer_email: dados.payer_email, init_point: dados.init_point }));
     if (!resposta.ok || !dados.init_point) {
   console.error("ERRO MERCADO PAGO:", JSON.stringify(dados));
 
