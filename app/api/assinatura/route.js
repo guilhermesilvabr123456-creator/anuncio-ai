@@ -17,9 +17,7 @@ export async function POST(request) {
     { status: 500 }
   );
     }
-const emailPagador = accessToken.startsWith("TEST-")
-   ? "test_payer@example.com"
-  : email;
+const emailPagador = email;
 
     const resposta = await fetch(
       "https://api.mercadopago.com/preapproval",
