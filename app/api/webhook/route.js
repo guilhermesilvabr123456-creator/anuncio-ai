@@ -33,7 +33,13 @@ export async function POST(request) {
     if (!assinaturaId) {
       return Response.json({ received: true });
     }
-
+// O Mercado Pago usa este ID fictício no simulador de Webhooks
+if (String(assinaturaId) === "123456") {
+  return Response.json({
+    received: true,
+    test: true,
+  });
+}
     const resposta = await fetch(
       `https://api.mercadopago.com/preapproval/${assinaturaId}`,
       {
