@@ -18,12 +18,7 @@ export async function POST(request) {
       );
     }
 
-    // Enquanto estivermos testando, usamos sempre um e-mail de teste.
-    const emailPagador =
-      process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || "test@testuser.com";
-
-    console.log("EMAIL ENVIADO AO MP:", emailPagador);
-
+    const emailPagador = email;
     const resposta = await fetch(
       "https://api.mercadopago.com/preapproval",
       {
