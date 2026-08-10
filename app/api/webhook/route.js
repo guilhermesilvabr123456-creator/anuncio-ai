@@ -33,24 +33,40 @@ export async function POST(request) {
     if (!assinaturaId) {
       return Response.json({ received: true });
     }
-// O Mercado Pago usa este ID fictício no simulador de Webhooks
-if (String(assinaturaId) === "123456") {
-  return Response.json({
-    received: true,
-    test: true,
-  });
-}
+
+    if (String(assinaturaId) === "123456") {
+      return Response.json({
+        received: true,
+        test: true,
+      });
+    }
+
+    const accessToken =
+      process.env.MERCADO_PAGO_ACCESS_TOKEN;
+
+    if (!accessToken) {
+      return Response.json(
+        { error: "Mercado Pago não configurado." },
+        { status: 500 }
+      );
+    }
+
     const resposta = await fetch(
       `https://api.mercadopago.com/preapproval/${assinaturaId}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         cache: "no-store",
       }
     );
 
     if (!resposta.ok) {
+      console.error(
+        "Erro ao consultar assinatura:",
+        resposta.status
+      );
+
       return Response.json(
         { error: "Não foi possível consultar a assinatura." },
         { status: 500 }
@@ -58,25 +74,64 @@ if (String(assinaturaId) === "123456") {
     }
 
     const assinatura = await resposta.json();
+
+    console.log(
+      "WEBHOOK ASSINATURA:",
+      JSON.stringify({
+        id: assinatura.id,
+        status: assinatura.status,
+        external_reference:
+          assinatura.external_reference,
+      })
+    );
+
     const userId = assinatura.external_reference;
 
     if (!userId) {
-      return Response.json({ received: true });
+      return Response.json({
+        received: true,
+        ignored: "external_reference ausente",
+      });
     }
 
-    const limite =
-      assinatura.status === "authorized" ? 100 : 5;
+    // Só libera o plano Pro quando a assinatura
+    // estiver realmente autorizada.
+    if (assinatura.status !== "authorized") {
+      return Response.json({
+        received: true,
+        status: assinatura.status,
+        changed: false,
+      });
+    }
 
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({
-        monthly_limit: limite,
+        monthly_limit: 100,
       })
-      .eq("id", userId);
+      .eq("id", userId)
+      .select("id");
 
     if (error) {
+      console.error(
+        "Erro Supabase:",
+        JSON.stringify(error)
+      );
+
       return Response.json(
         { error: "Não foi possível atualizar o plano." },
+        { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
+      console.error(
+        "Perfil não encontrado para external_reference:",
+        userId
+      );
+
+      return Response.json(
+        { error: "Usuário da assinatura não encontrado." },
         { status: 500 }
       );
     }
@@ -84,9 +139,12 @@ if (String(assinaturaId) === "123456") {
     return Response.json({
       received: true,
       status: assinatura.status,
-      monthly_limit: limite,
+      monthly_limit: 100,
+      updated: true,
     });
-  } catch {
+  } catch (error) {
+    console.error("ERRO WEBHOOK:", error);
+
     return Response.json(
       { error: "Erro ao processar a notificação." },
       { status: 500 }
