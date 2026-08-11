@@ -83,12 +83,10 @@ export default function Home() {
     try {
       const resposta = await fetch("/api/gerar", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-
         body: JSON.stringify({
           produto,
           publico,
@@ -121,11 +119,9 @@ export default function Home() {
 
           if (perfilAtualizado) {
             setPlano(perfilAtualizado.plan || "free");
-
             setLimiteMensal(
               perfilAtualizado.monthly_limit ?? 5
             );
-
             setUsoAtual(
               perfilAtualizado.usage_count ?? 0
             );
@@ -134,7 +130,6 @@ export default function Home() {
       }
     } catch (erro) {
       console.error(erro);
-
       setResultado(
         "Erro ao gerar anúncio. Tente novamente."
       );
@@ -168,11 +163,9 @@ export default function Home() {
 
       const resposta = await fetch("/api/assinatura", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           email: user.email,
           userId: user.id,
@@ -191,10 +184,7 @@ export default function Home() {
       }
     } catch (erro) {
       console.error(erro);
-
-      alert(
-        "Não foi possível iniciar a assinatura."
-      );
+      alert("Não foi possível iniciar a assinatura.");
     }
   }
 
@@ -229,13 +219,23 @@ export default function Home() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={sair}
-              style={styles.botaoSair}
-            >
-              Sair
-            </button>
+            <div style={styles.acoesUsuario}>
+              <a
+                href="/conta"
+                style={styles.botaoConta}
+              >
+                Minha conta
+              </a>
+
+              <button
+                type="button"
+                onClick={sair}
+                style={styles.botaoSair}
+              >
+                Sair
+              </button>
+            </div>
+
           </div>
         )}
 
@@ -359,6 +359,7 @@ export default function Home() {
                 )}
             </div>
           )}
+
         </div>
 
         <div style={styles.rodapeArea}>
@@ -402,6 +403,7 @@ export default function Home() {
 
           </div>
         </div>
+
       </div>
     </main>
   );
@@ -433,6 +435,7 @@ const styles = {
 
   usuarioInfo: {
     flex: 1,
+    minWidth: 0,
   },
 
   nome: {
@@ -473,6 +476,26 @@ const styles = {
   contador: {
     color: "#a1a1aa",
     fontSize: "14px",
+  },
+
+  acoesUsuario: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+
+  botaoConta: {
+    display: "inline-block",
+    background: "#7c3aed",
+    color: "#ffffff",
+    borderRadius: "10px",
+    padding: "10px 14px",
+    textDecoration: "none",
+    fontWeight: "700",
+    fontSize: "14px",
+    whiteSpace: "nowrap",
   },
 
   botaoSair: {
