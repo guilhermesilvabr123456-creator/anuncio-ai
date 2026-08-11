@@ -2,45 +2,48 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
+
 export default function Home() {
   const [produto, setProduto] = useState("");
   const [publico, setPublico] = useState("");
   const [resultado, setResultado] = useState("");
   const [carregando, setCarregando] = useState(false);
-const [nomeUsuario, setNomeUsuario] = useState("");
-useEffect(() => {
-  async function carregarUsuario() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const [nomeUsuario, setNomeUsuario] = useState("");
 
-    if (user) {
-      setNomeUsuario(
-        user.user_metadata?.name ||
-        user.email?.split("@")[0] ||
-        "Usuário"
-      );
+  useEffect(() => {
+    async function carregarUsuario() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setNomeUsuario(
+          user.user_metadata?.name ||
+            user.email?.split("@")[0] ||
+            "Usuário"
+        );
+      }
     }
-  }
 
-  carregarUsuario();
-}, []);
+    carregarUsuario();
+  }, []);
 
   async function sair() {
-  await supabase.auth.signOut();
-  window.location.href = "/login";
-}
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
-async function gerarAnuncio() {
-
+  async function gerarAnuncio() {
     if (!produto || !publico) {
       alert("Preencha o produto e o público-alvo.");
       return;
     }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -50,6 +53,7 @@ async function gerarAnuncio() {
       window.location.href = "/login";
       return;
     }
+
     setCarregando(true);
     setResultado("");
 
@@ -57,7 +61,8 @@ async function gerarAnuncio() {
       const resposta = await fetch("/api/gerar", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",        Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           produto,
@@ -67,52 +72,108 @@ async function gerarAnuncio() {
 
       const dados = await resposta.json();
 
-setResultado(
-  ((resposta.ok ? dados.anuncio : dados.error) || "Não foi possível gerar o anúncio.")
-    .replace(/###/g, "")
-    .replace(/\*\*/g, "")
-);
+      setResultado(
+        (
+          (resposta.ok ? dados.anuncio : dados.error) ||
+          "Não foi possível gerar o anúncio."
+        )
+          .replace(/###/g, "")
+          .replace(/\*\*/g, "")
+      );
     } catch (erro) {
-      setResultado("Erro ao gerar anúncio. Tente novamente.");
+      setResultado(
+        "Erro ao gerar anúncio. Tente novamente."
+      );
     }
 
     setCarregando(false);
   }
+
   async function copiarAnuncio() {
     if (!resultado) return;
 
     await navigator.clipboard.writeText(resultado);
     alert("Anúncio copiado!");
   }
+
+  async function assinarPro() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Entre novamente na sua conta.");
+      window.location.href = "/login";
+      return;
+    }
+
+    try {
+      const resposta = await fetch("/api/assinatura", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+          userId: user.id,
+        }),
+      });
+
+      const dados = await resposta.json();
+
+      if (dados.url) {
+        window.location.href = dados.url;
+      } else {
+        alert(
+          dados.error ||
+            "Não foi possível iniciar a assinatura."
+        );
+      }
+    } catch (erro) {
+      alert("Erro ao iniciar a assinatura.");
+    }
+  }
+
   return (
     <main style={styles.main}>
-      <div style={styles.container}>{nomeUsuario && (
-  <div
-    style={{
-      color: "#ffffff",
-      textAlign: "right",
-      marginBottom: "16px",
-      fontWeight: "700",
-    }}
-  >
-    Olá, {nomeUsuario} 👋
-  </div>
-)}
-        <div style={styles.badge}>✨ Inteligência Artificial</div>
+      <div style={styles.container}>
+
+        {nomeUsuario && (
+          <div style={styles.usuario}>
+            <span>Olá, {nomeUsuario} 👋</span>
+
+            <button
+              type="button"
+              onClick={sair}
+              style={styles.botaoSair}
+            >
+              Sair
+            </button>
+          </div>
+        )}
+
+        <div style={styles.badge}>
+          ✨ Inteligência Artificial
+        </div>
 
         <h1 style={styles.titulo}>
           Crie anúncios que
           <br />
-          <span style={styles.destaque}>vendem mais</span>
+          <span style={styles.destaque}>
+            vendem mais
+          </span>
         </h1>
 
         <p style={styles.subtitulo}>
-          Gere textos profissionais para seus anúncios usando inteligência
-          artificial em poucos segundos.
+          Gere textos profissionais para seus anúncios
+          usando inteligência artificial em poucos segundos.
         </p>
 
         <div style={styles.card}>
-          <label style={styles.label}>O que você quer anunciar?</label>
+
+          <label style={styles.label}>
+            O que você quer anunciar?
+          </label>
 
           <input
             style={styles.input}
@@ -121,7 +182,9 @@ setResultado(
             onChange={(e) => setProduto(e.target.value)}
           />
 
-          <label style={styles.label}>Quem é seu público?</label>
+          <label style={styles.label}>
+            Quem é seu público?
+          </label>
 
           <input
             style={styles.input}
@@ -131,72 +194,101 @@ setResultado(
           />
 
           <button
-            style={styles.botao}
+            type="button"
+            style={{
+              ...styles.botao,
+              opacity: carregando ? 0.7 : 1,
+            }}
             onClick={gerarAnuncio}
             disabled={carregando}
           >
-            {carregando ? "Gerando..." : "✨ Gerar anúncio com IA"}
+            {carregando
+              ? "Gerando..."
+              : "✨ Gerar anúncio com IA"}
           </button>
 
           {resultado && (
             <div style={styles.resultado}>
+
               <h3>Seu anúncio:</h3>
-              <p style={{ whiteSpace: "pre-wrap" }}>{resultado}</p>
-                    <button
-            type="button"
-            style={{ ...styles.botao, marginTop: "16px" }}
-            onClick={copiarAnuncio}
-          >
-            📋 Copiar anúncio
-          </button> {resultado.includes("atingiu o limite") && (
-  <div style={{ marginTop: "20px" }}>
-    <h3>Plano Pro — R$ 19,90/mês</h3>
-    <p>Tenha até 100 anúncios por mês.</p>
 
-    <button
-      type="button"
-      style={{ ...styles.botao, marginTop: "12px" }}
-      onClick={async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+              <p style={{ whiteSpace: "pre-wrap" }}>
+                {resultado}
+              </p>
 
-        if (!user) {
-          alert("Entre novamente na sua conta.");
-          window.location.href = "/login";
-          return;
-        }
+              {!resultado.includes("atingiu o limite") && (
+                <button
+                  type="button"
+                  style={{
+                    ...styles.botao,
+                    marginTop: "16px",
+                  }}
+                  onClick={copiarAnuncio}
+                >
+                  📋 Copiar anúncio
+                </button>
+              )}
 
-        const resposta = await fetch("/api/assinatura", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: user.email,
-            userId: user.id,
-          }),
-        });
+              {resultado.includes("atingiu o limite") && (
+                <div style={styles.planoPro}>
 
-        const dados = await resposta.json();
+                  <h3>
+                    Plano Pro — R$ 19,90/mês
+                  </h3>
 
-        if (dados.url) {
-          window.location.href = dados.url;
-        } else {
-          alert(dados.error || "Não foi possível iniciar a assinatura.");
-        }
-      }}
-    >
-      💳 Assinar com Mercado Pago
-    </button>
-  </div>
-)} </div>
+                  <p>
+                    Tenha até 100 anúncios por mês.
+                  </p>
+
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.botao,
+                      marginTop: "12px",
+                    }}
+                    onClick={assinarPro}
+                  >
+                    💳 Assinar com Mercado Pago
+                  </button>
+
+                </div>
+              )}
+
+            </div>
           )}
+
         </div>
 
-        <p style={styles.rodape}>
-          ⚡ Anúncios profissionais em segundos
-        </p>
+        <div style={styles.rodapeArea}>
+
+          <p style={styles.rodape}>
+            ⚡ Anúncios profissionais em segundos
+          </p>
+
+          <div style={styles.linksRodape}>
+
+            <a
+              href="/termos"
+              style={styles.linkRodape}
+            >
+              Termos de Uso
+            </a>
+
+            <span style={styles.separador}>
+              •
+            </span>
+
+            <a
+              href="/privacidade"
+              style={styles.linkRodape}
+            >
+              Política de Privacidade
+            </a>
+
+          </div>
+
+        </div>
+
       </div>
     </main>
   );
@@ -215,6 +307,25 @@ const styles = {
     maxWidth: "650px",
     margin: "0 auto",
     textAlign: "center",
+  },
+
+  usuario: {
+    color: "#ffffff",
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "16px",
+    fontWeight: "700",
+  },
+
+  botaoSair: {
+    background: "transparent",
+    color: "#a1a1aa",
+    border: "1px solid #3f3f46",
+    borderRadius: "8px",
+    padding: "6px 10px",
+    cursor: "pointer",
   },
 
   badge: {
@@ -291,9 +402,36 @@ const styles = {
     lineHeight: "1.6",
   },
 
+  planoPro: {
+    marginTop: "20px",
+  },
+
+  rodapeArea: {
+    marginTop: "25px",
+  },
+
   rodape: {
     color: "#71717a",
     marginTop: "25px",
     fontSize: "14px",
+  },
+
+  linksRodape: {
+    marginTop: "12px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  linkRodape: {
+    color: "#8b5cf6",
+    textDecoration: "none",
+    fontSize: "13px",
+  },
+
+  separador: {
+    color: "#52525b",
   },
 };
