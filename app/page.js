@@ -13,7 +13,11 @@ export default function Home() {
   const [publico, setPublico] = useState("");
   const [resultado, setResultado] = useState("");
   const [carregando, setCarregando] = useState(false);
+
   const [nomeUsuario, setNomeUsuario] = useState("");
+  const [plano, setPlano] = useState("");
+  const [limiteMensal, setLimiteMensal] = useState(0);
+  const [usoAtual, setUsoAtual] = useState(0);
 
   useEffect(() => {
     async function carregarUsuario() {
@@ -21,12 +25,27 @@ export default function Home() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user) {
-        setNomeUsuario(
-          user.user_metadata?.name ||
-            user.email?.split("@")[0] ||
-            "Usuário"
-        );
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setNomeUsuario(
+        user.user_metadata?.name ||
+          user.email?.split("@")[0] ||
+          "Usuário"
+      );
+
+      const { data: perfil, error } = await supabase
+        .from("profiles")
+        .select("plan, monthly_limit, usage_count")
+        .eq("id", user.id)
+        .single();
+
+      if (!error && perfil) {
+        setPlano(perfil.plan || "free");
+        setLimiteMensal(perfil.monthly_limit || 5);
+        setUsoAtual(perfil.usage_count || 0);
       }
     }
 
@@ -80,6 +99,16 @@ export default function Home() {
           .replace(/###/g, "")
           .replace(/\*\*/g, "")
       );
+
+      if (resposta.ok) {
+        if (typeof dados.usage_count === "number") {
+          setUsoAtual(dados.usage_count);
+        }
+
+        if (typeof dados.monthly_limit === "number") {
+          setLimiteMensal(dados.monthly_limit);
+        }
+      }
     } catch (erro) {
       setResultado(
         "Erro ao gerar anúncio. Tente novamente."
@@ -134,13 +163,39 @@ export default function Home() {
     }
   }
 
+  const nomePlano =
+    plano === "pro" ? "Plano Pro" : "Plano Free";
+
   return (
     <main style={styles.main}>
       <div style={styles.container}>
 
         {nomeUsuario && (
-          <div style={styles.usuario}>
-            <span>Olá, {nomeUsuario} 👋</span>
+          <div style={styles.topoUsuario}>
+            <div style={styles.usuarioInfo}>
+              <span style={styles.nome}>
+                Olá, {nomeUsuario} 👋
+              </span>
+
+              {plano && (
+                <div style={styles.statusPlano}>
+                  <span
+                    style={{
+                      ...styles.badgePlano,
+                      ...(plano === "pro"
+                        ? styles.badgePro
+                        : styles.badgeFree),
+                    }}
+                  >
+                    {nomePlano}
+                  </span>
+
+                  <span style={styles.contador}>
+                    {usoAtual}/{limiteMensal} anúncios usados
+                  </span>
+                </div>
+              )}
+            </div>
 
             <button
               type="button"
@@ -170,7 +225,6 @@ export default function Home() {
         </p>
 
         <div style={styles.card}>
-
           <label style={styles.label}>
             O que você quer anunciar?
           </label>
@@ -209,7 +263,6 @@ export default function Home() {
 
           {resultado && (
             <div style={styles.resultado}>
-
               <h3>Seu anúncio:</h3>
 
               <p style={{ whiteSpace: "pre-wrap" }}>
@@ -231,7 +284,6 @@ export default function Home() {
 
               {resultado.includes("atingiu o limite") && (
                 <div style={styles.planoPro}>
-
                   <h3>
                     Plano Pro — R$ 19,90/mês
                   </h3>
@@ -250,23 +302,18 @@ export default function Home() {
                   >
                     💳 Assinar com Mercado Pago
                   </button>
-
                 </div>
               )}
-
             </div>
           )}
-
         </div>
 
         <div style={styles.rodapeArea}>
-
           <p style={styles.rodape}>
             ⚡ Anúncios profissionais em segundos
           </p>
 
           <div style={styles.linksRodape}>
-
             <a
               href="/termos"
               style={styles.linkRodape}
@@ -284,9 +331,7 @@ export default function Home() {
             >
               Política de Privacidade
             </a>
-
           </div>
-
         </div>
 
       </div>
@@ -309,14 +354,56 @@ const styles = {
     textAlign: "center",
   },
 
-  usuario: {
-    color: "#ffffff",
+  topoUsuario: {
     display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     gap: "12px",
-    marginBottom: "16px",
+    marginBottom: "20px",
+  },
+
+  usuarioInfo: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "8px",
+  },
+
+  nome: {
+    color: "#ffffff",
     fontWeight: "700",
+    fontSize: "17px",
+  },
+
+  statusPlano: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "8px",
+  },
+
+  badgePlano: {
+    display: "inline-block",
+    padding: "5px 10px",
+    borderRadius: "999px",
+    fontSize: "12px",
+    fontWeight: "700",
+  },
+
+  badgePro: {
+    background: "#7c3aed",
+    color: "#ffffff",
+  },
+
+  badgeFree: {
+    background: "#27272a",
+    color: "#d4d4d8",
+    border: "1px solid #3f3f46",
+  },
+
+  contador: {
+    color: "#a1a1aa",
+    fontSize: "12px",
   },
 
   botaoSair: {
@@ -324,7 +411,7 @@ const styles = {
     color: "#a1a1aa",
     border: "1px solid #3f3f46",
     borderRadius: "8px",
-    padding: "6px 10px",
+    padding: "7px 11px",
     cursor: "pointer",
   },
 
