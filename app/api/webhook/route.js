@@ -110,9 +110,14 @@ export async function POST(request) {
       notificacao?.type ||
       url.searchParams.get("type");
 
+    const eventosPermitidos = [
+      "subscription_preapproval",
+      "subscription_authorized_payment",
+    ];
+
     if (
       tipoEvento &&
-      tipoEvento !== "subscription_preapproval"
+      !eventosPermitidos.includes(tipoEvento)
     ) {
       return Response.json({
         received: true,
@@ -120,29 +125,29 @@ export async function POST(request) {
       });
     }
 
-    const assinaturaId =
+    let recursoId =
       notificacao?.data?.id ||
       notificacao?.id ||
       dataId ||
       url.searchParams.get("id");
 
-    if (!assinaturaId) {
+    if (!recursoId) {
       return Response.json({
         received: true,
       });
     }
 
-    // Simulação do Mercado Pago
-    if (String(assinaturaId) === "123456") {
+    // =========================
+    // SIMULAÇÃO MERCADO PAGO
+    // =========================
+
+    if (String(recursoId) === "123456") {
       return Response.json({
         received: true,
         test: true,
+        type: tipoEvento,
       });
     }
-
-    // =========================
-    // CONSULTAR ASSINATURA
-    // =========================
 
     const accessToken =
       process.env.MERCADO_PAGO_ACCESS_TOKEN;
@@ -153,6 +158,63 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    // =========================
+    // DESCOBRIR ID DA ASSINATURA
+    // =========================
+
+    let assinaturaId = recursoId;
+
+    if (
+      tipoEvento ===
+      "subscription_authorized_payment"
+    ) {
+      const respostaPagamento = await fetch(
+        `https://api.mercadopago.com/authorized_payments/${recursoId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      if (!respostaPagamento.ok) {
+        console.error(
+          "Erro ao consultar pagamento autorizado:",
+          respostaPagamento.status
+        );
+
+        return Response.json(
+          {
+            error:
+              "Não foi possível consultar o pagamento autorizado.",
+          },
+          { status: 500 }
+        );
+      }
+
+      const pagamentoAutorizado =
+        await respostaPagamento.json();
+
+      assinaturaId =
+        pagamentoAutorizado.preapproval_id;
+
+      if (!assinaturaId) {
+        console.error(
+          "preapproval_id ausente no pagamento autorizado."
+        );
+
+        return Response.json({
+          received: true,
+          ignored: "preapproval_id ausente",
+        });
+      }
+    }
+
+    // =========================
+    // CONSULTAR ASSINATURA
+    // =========================
 
     const resposta = await fetch(
       `https://api.mercadopago.com/preapproval/${assinaturaId}`,
@@ -188,6 +250,7 @@ export async function POST(request) {
         status: assinatura.status,
         external_reference:
           assinatura.external_reference,
+        tipoEvento,
       })
     );
 
@@ -202,16 +265,33 @@ export async function POST(request) {
     }
 
     // =========================
-    // ATUALIZAR PLANO
+    // DEFINIR PLANO
     // =========================
 
-    let novoPlano = "free";
-    let novoLimite = 5;
+    let novoPlano;
+    let novoLimite;
 
     if (assinatura.status === "authorized") {
       novoPlano = "pro";
       novoLimite = 100;
+    } else if (
+      assinatura.status === "paused" ||
+      assinatura.status === "cancelled" ||
+      assinatura.status === "canceled"
+    ) {
+      novoPlano = "free";
+      novoLimite = 5;
+    } else {
+      return Response.json({
+        received: true,
+        status: assinatura.status,
+        changed: false,
+      });
     }
+
+    // =========================
+    // ATUALIZAR SUPABASE
+    // =========================
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
@@ -254,6 +334,7 @@ export async function POST(request) {
 
     return Response.json({
       received: true,
+      type: tipoEvento,
       status: assinatura.status,
       plan: novoPlano,
       monthly_limit: novoLimite,
