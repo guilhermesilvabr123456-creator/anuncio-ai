@@ -202,22 +202,22 @@ export async function POST(request) {
     }
 
     // =========================
-    // LIBERAR PLANO PRO
+    // ATUALIZAR PLANO
     // =========================
 
-    if (assinatura.status !== "authorized") {
-      return Response.json({
-        received: true,
-        status: assinatura.status,
-        changed: false,
-      });
+    let novoPlano = "free";
+    let novoLimite = 5;
+
+    if (assinatura.status === "authorized") {
+      novoPlano = "pro";
+      novoLimite = 100;
     }
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({
-        plan: "pro",
-        monthly_limit: 100,
+        plan: novoPlano,
+        monthly_limit: novoLimite,
       })
       .eq("id", userId)
       .select("id");
@@ -255,8 +255,8 @@ export async function POST(request) {
     return Response.json({
       received: true,
       status: assinatura.status,
-      plan: "pro",
-      monthly_limit: 100,
+      plan: novoPlano,
+      monthly_limit: novoLimite,
       updated: true,
     });
   } catch (error) {
