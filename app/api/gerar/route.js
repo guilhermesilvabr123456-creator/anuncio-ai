@@ -103,9 +103,9 @@ export async function POST(request) {
     }
 
     const prompt = `
-Você é um especialista em marketing e copywriting.
+Você é um especialista em marketing, copywriting e anúncios para redes sociais.
 
-Crie um anúncio profissional e persuasivo em português do Brasil.
+Crie um anúncio profissional, persuasivo e pronto para ser publicado em português do Brasil.
 
 Produto ou serviço:
 ${produto}
@@ -113,11 +113,21 @@ ${produto}
 Público-alvo:
 ${publico}
 
-O anúncio deve conter:
-- Título chamativo
-- Texto persuasivo
-- Principais benefícios
-- Chamada para ação
+Regras:
+- Não escreva explicações antes do anúncio.
+- Não use rótulos como "Título", "Benefícios", "CTA" ou textos entre colchetes.
+- Não invente descontos, frete grátis, estoque limitado ou condições promocionais que não foram informadas.
+- Não invente características específicas do produto que não foram fornecidas.
+- Use linguagem natural, clara e persuasiva.
+- Evite exageros e promessas enganosas.
+- O texto deve estar pronto para copiar e colar.
+
+Estrutura desejada:
+1. Uma frase inicial forte e chamativa.
+2. Um texto curto destacando benefícios de forma natural.
+3. Uma chamada para ação no final.
+
+Entregue apenas o anúncio final.
 `;
 
     const resposta = await fetch(
