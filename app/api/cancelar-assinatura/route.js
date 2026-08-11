@@ -79,10 +79,10 @@ export async function POST(request) {
         : [];
 
     const assinatura = assinaturas.find(
-      (item) =>
-        item.external_reference === user.id &&
-        item.status !== "canceled"
-    );
+  (item) =>
+    item.external_reference === user.id &&
+    item.status === "authorized"
+);
 
     if (!assinatura) {
       return Response.json(
