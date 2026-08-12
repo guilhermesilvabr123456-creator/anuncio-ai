@@ -81,7 +81,7 @@ export async function POST(request) {
     const assinatura = assinaturas.find(
   (item) =>
     item.external_reference === user.id &&
-    item.status === "authorized"
+    ["authorized", "paused"].includes(item.status)
 );
 
     if (!assinatura) {
