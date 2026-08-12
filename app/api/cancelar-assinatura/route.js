@@ -78,10 +78,58 @@ export async function POST(request) {
         ? buscaDados.results
         : [];
 
-    const assinatura = assinaturas.find(
+    // Buscar assinaturas no Mercado Pago
+const busca = await fetch(
+  "https://api.mercadopago.com/preapproval/search",
+  {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  }
+);
+
+const buscaDados = await busca.json();
+
+if (!busca.ok) {
+  console.error(
+    "Erro ao buscar assinatura:",
+    buscaDados
+  );
+
+  return Response.json(
+    {
+      error:
+        "Não foi possível localizar sua assinatura.",
+    },
+    { status: 500 }
+  );
+}
+
+const assinaturas =
+  Array.isArray(buscaDados?.results)
+    ? buscaDados.results
+    : [];
+
+console.log(
+  "Assinaturas encontradas:",
+  assinaturas.map((item) => ({
+    id: item.id,
+    status: item.status,
+    external_reference:
+      item.external_reference,
+    payer_email: item.payer_email,
+  }))
+);
+
+const assinatura = assinaturas.find(
   (item) =>
-    item.external_reference === user.id &&
-    ["authorized", "paused"].includes(item.status)
+    String(item.external_reference) ===
+      String(user.id) &&
+    ["authorized", "paused"].includes(
+      item.status
+    )
 );
 
     if (!assinatura) {
